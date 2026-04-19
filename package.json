@@ -1,0 +1,23 @@
+{
+  "name": "ecommerce-admin-dashboard",
+  "version": "1.0.0",
+  "description": "Role-Based eCommerce Admin Dashboard with AdminJS, Sequelize, and PostgreSQL",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "4.18.2",
+    "sequelize": "6.28.0",
+    "pg": "8.9.0",
+    "pg-hstore": "2.3.4",
+    "bcryptjs": "2.4.3",
+    "jsonwebtoken": "8.5.1",
+    "dotenv": "16.0.3",
+    "cors": "2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "2.0.22"
+  }
+}
