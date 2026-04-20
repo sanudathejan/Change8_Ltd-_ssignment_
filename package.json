@@ -8,14 +8,16 @@
     "dev": "nodemon src/server.js"
   },
   "dependencies": {
+    "bcryptjs": "2.4.3",
+    "connect-mongo": "^6.0.0",
+    "cors": "2.8.5",
+    "dotenv": "16.0.3",
     "express": "4.18.2",
-    "sequelize": "6.28.0",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "8.5.1",
     "pg": "8.9.0",
     "pg-hstore": "2.3.4",
-    "bcryptjs": "2.4.3",
-    "jsonwebtoken": "8.5.1",
-    "dotenv": "16.0.3",
-    "cors": "2.8.5"
+    "sequelize": "6.28.0"
   },
   "devDependencies": {
     "nodemon": "2.0.22"
