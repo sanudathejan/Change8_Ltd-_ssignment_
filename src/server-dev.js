@@ -8,12 +8,14 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-let dbConnected = false;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Global error handler for database errors
+let dbConnected = false;
 
 // Health check route
 app.get('/', (req, res) => {
@@ -21,40 +23,31 @@ app.get('/', (req, res) => {
     message: 'eCommerce Admin Dashboard API',
     version: '1.0.0',
     status: 'Server is running',
-    database: dbConnected ? 'connected' : 'disconnected',
+    database: dbConnected ? 'connected' : 'disconnected (development mode)',
   });
 });
 
-// Database status route
+// API Routes (these will fail gracefully if DB is unavailable)
+app.use('/api', authRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Test endpoint that doesn't require DB
 app.get('/api/health', (req, res) => {
   res.json({
     database: dbConnected ? 'connected' : 'offline',
     server: 'running',
     timestamp: new Date(),
-    message: dbConnected 
-      ? '✅ All systems operational' 
-      : '⚠️ Database offline - Run: npm run setup-db',
+    message: dbConnected ? '✅ All systems operational' : '⚠️ Database connection unavailable. See console for details.',
   });
 });
 
-// API Routes
-app.use('/api', authRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Global error handler for database errors
+// Error handling middleware
 app.use((err, req, res, next) => {
   if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeAccessDeniedError') {
     return res.status(503).json({
       error: 'Database connection error',
-      message: 'PostgreSQL connection failed. Check .env and run: npm run setup-db',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    });
-  }
-  
-  if (err.name === 'SequelizeValidationError') {
-    return res.status(400).json({
-      error: 'Validation error',
-      message: err.message,
+      message: 'The database is currently unavailable. Please check PostgreSQL configuration.',
+      hint: 'Run: npm run setup-db',
     });
   }
   
@@ -63,39 +56,26 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    path: req.path,
-    method: req.method,
-  });
-});
-
 // Initialize server
 const startServer = async () => {
   try {
-    // Try to connect to database
+    // Try to sync database
     try {
       const { sequelize, syncDatabase } = require('./models');
       const { seedDatabase } = require('./config/seed');
 
-      console.log('⏳ Syncing database...');
       await syncDatabase();
-
-      console.log('⏳ Seeding database with default users...');
       await seedDatabase();
-
       dbConnected = true;
-      console.log('✅ Database connected and initialized\n');
+      console.log('✅ Database connected and synced');
     } catch (dbError) {
       dbConnected = false;
       console.error('⚠️ Database Error:', dbError.message);
-      console.error('   Starting server in offline mode...');
-      console.error('   API endpoints will return database errors\n');
+      console.error('   API endpoints will return database-related errors');
+      console.error('   To fix: Run "npm run setup-db" first\n');
     }
 
-    // Start server regardless of DB status
+    // Start server regardless of DB status (for development)
     app.listen(PORT, () => {
       console.log(`\n✅ Server is running on http://localhost:${PORT}`);
       console.log(`\n📚 API Endpoints:\n`);
@@ -109,21 +89,15 @@ const startServer = async () => {
       console.log(`      GET    http://localhost:${PORT}/api/admin/user-dashboard - User dashboard (limited)`);
       console.log(`      GET    http://localhost:${PORT}/api/admin/settings - Get all settings`);
       console.log(`      PUT    http://localhost:${PORT}/api/admin/settings/:id - Update setting`);
-      console.log(`      GET    http://localhost:${PORT}/api/admin/config - AdminJS configuration`);
-      console.log(`      GET    http://localhost:${PORT}/api/admin/resources - List all admin resources`);
       console.log(`\n   🏥 Health: GET http://localhost:${PORT}/api/health`);
       console.log(`\n📝 Test Credentials:`);
       console.log(`   Admin:  admin@example.com / admin123`);
       console.log(`   User:   user@example.com / user123\n`);
       
       if (!dbConnected) {
-        console.log('═══════════════════════════════════════════════');
-        console.log('⚠️  DATABASE NOT CONNECTED');
-        console.log('═══════════════════════════════════════════════');
-        console.log('\nTo fix the PostgreSQL connection:');
-        console.log('1. Run: npm run setup-db');
-        console.log('2. Follow the troubleshooting steps');
-        console.log('3. Restart server with: npm run dev\n');
+        console.log('⚠️ DATABASE STATUS: NOT CONNECTED');
+        console.log('   API will return database errors until DB is configured');
+        console.log('   To fix: Run "npm run setup-db"\n');
       }
     });
   } catch (error) {
