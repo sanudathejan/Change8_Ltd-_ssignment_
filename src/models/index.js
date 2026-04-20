@@ -1,10 +1,21 @@
-const User = require('./User');
-const Category = require('./Category');
-const Product = require('./Product');
-const Order = require('./Order');
-const OrderItem = require('./OrderItem');
-const Setting = require('./Setting');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+
+// Import model definitions
+const UserModel = require('./User');
+const CategoryModel = require('./Category');
+const ProductModel = require('./Product');
+const OrderModel = require('./Order');
+const OrderItemModel = require('./OrderItem');
+const SettingModel = require('./Setting');
+
+// Initialize all models
+const User = UserModel(sequelize, DataTypes);
+const Category = CategoryModel(sequelize, DataTypes);
+const Product = ProductModel(sequelize, DataTypes);
+const Order = OrderModel(sequelize, DataTypes);
+const OrderItem = OrderItemModel(sequelize, DataTypes);
+const Setting = SettingModel(sequelize, DataTypes);
 
 // Define Associations
 // User -> Order (One to Many)
